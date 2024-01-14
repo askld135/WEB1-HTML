@@ -4,9 +4,10 @@ var url = require('url');//url이라는 모듈을 사용할 것을 node.js에게
 var app = http.createServer(function(request,response){
     var _url = request.url;
     var queryData = url.parse(_url, true).query;
+    var title = queryData.id;
     console.log(queryData.id);
     if(_url == '/'){
-      _url = '/index.html';
+      title = 'welcome';
     }
     if(_url == '/favicon.ico'){
         response.writeHead(404);
@@ -14,7 +15,27 @@ var app = http.createServer(function(request,response){
         return;
     }
     response.writeHead(200);
-    console.log(__dirname + _url);
-    response.end(queryData.id); //(querydata.id)를 페이지에 출력하는 역할
+    fs.readFile(`data/${queryData.id}`,'utf8',function(err, description){
+        var template = `
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>WEB - ${title}</title>
+                <meta charset = "utf-8">
+            </head>
+        
+            <body>
+                <h1><a href="/">WEB</a></h1>
+                <ol>
+                    <li><a href="/?id=html">HTML</li>
+                    <li><a href="/?id=CSS">CSS</li>
+                    <li><a href="/?id=JavaScript">JavaScript</li>
+                </ol>
+        
+                <h2>${title}</h2>
+                <p>${description}</p>
+        </html>`
+        response.end(template); //(querydata.id)를 페이지에 출력하는 역할
+    });
 });
 app.listen(3000);
