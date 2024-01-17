@@ -1,6 +1,7 @@
 var http = require('http');
 var fs = require('fs');
 var url = require('url');//url이라는 모듈을 사용할 것을 node.js에게 알려줌.
+var qs = require('querystring');
 
 function templateHTML(title, list, body){
     return `
@@ -57,23 +58,33 @@ var app = http.createServer(function(request,response){
         }
     } else if(pathname === '/create'){
         fs.readdir('./data', function(error, filelist){
-            var title = 'WEB-create';
+            var title = 'WEB - create';
             var list = templateList(filelist);
             var template = templateHTML(title, list, `
-            <form action="https://localhost:3000/process_create" method="post">
+              <form action="http://localhost:3000/create_process" method="post">
+                <p><input type="text" name="title" placeholder="title"></p>
                 <p>
-                    <input type = "text" name="title" placeholder = "title">
+                  <textarea name="description" placeholder="description"></textarea>
                 </p>
                 <p>
-                    <textarea name="description" placeholder = "description"></textarea>
+                  <input type="submit">
                 </p>
-                <p>
-                    <input type = "submit">
-                </p>
-            </form>`);
+              </form>
+            `);
             response.writeHead(200);
             response.end(template);
-        })
+          });
+    } else if(pathname === '/create_process'){
+        var body = '';
+        request.on('data',function(data){   //node.js에서 post방식으로 전송되는 데이터가 많을 경우를 대비하여, 데이터를 조각조각 수신할 때마다 서버는 callback함수를 호출
+            body = body + data;
+        });
+        request.on('end', function(){
+            var post = qs.parse(body);
+            console.log(post);
+        });
+        response.writeHead(200);
+        response.end('success');
     } else {
         response.writeHead(404);    //파일을 찾을수 없는 경우 서버는 404를 전송함
         response.end('Not found');
