@@ -14,6 +14,7 @@ function templateHTML(title, list, body){
         <body>
             <h1><a href="/">WEB</a></h1>
             ${list}
+            <a href = "/create">create</a>
             ${body}
         </body>    
     </html>`;
@@ -54,7 +55,26 @@ var app = http.createServer(function(request,response){
                 });
             })
         }
-    }else{
+    } else if(pathname === '/create'){
+        fs.readdir('./data', function(error, filelist){
+            var title = 'WEB-create';
+            var list = templateList(filelist);
+            var template = templateHTML(title, list, `
+            <form action="https://localhost:3000/process_create" method="post">
+                <p>
+                    <input type = "text" name="title" placeholder = "title">
+                </p>
+                <p>
+                    <textarea name="description" placeholder = "description"></textarea>
+                </p>
+                <p>
+                    <input type = "submit">
+                </p>
+            </form>`);
+            response.writeHead(200);
+            response.end(template);
+        })
+    } else {
         response.writeHead(404);    //파일을 찾을수 없는 경우 서버는 404를 전송함
         response.end('Not found');
     }
