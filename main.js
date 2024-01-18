@@ -81,10 +81,13 @@ var app = http.createServer(function(request,response){
         });
         request.on('end', function(){
             var post = qs.parse(body);
-            console.log(post);
+            var title = post.title;
+            var description = post.description;
+            fs.writeFile(`data/${title}`, description, 'utf8', function(err){
+                response.writeHead(302, {Location : `/?id=${title}`});  //302는 사용자를 지정한 경로로 이동시키는 rediect를 수행함
+                response.end('success');
+            })
         });
-        response.writeHead(200);
-        response.end('success');
     } else {
         response.writeHead(404);    //파일을 찾을수 없는 경우 서버는 404를 전송함
         response.end('Not found');
