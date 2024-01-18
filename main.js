@@ -2,22 +2,23 @@ var http = require('http');
 var fs = require('fs');
 var url = require('url');//url이라는 모듈을 사용할 것을 node.js에게 알려줌.
 var qs = require('querystring');
+const path = require('path');
 
-function templateHTML(title, list, body){
+function templateHTML(title, list, body, control){
     return `
     <!DOCTYPE html>
     <html>
-        <head>
-            <title>WEB - ${title}</title>
-            <meta charset = "utf-8">
-        </head>
+      <head>
+        <title>WEB - ${title}</title>
+        <meta charset = "utf-8">
+      </head>
     
-        <body>
-            <h1><a href="/">WEB</a></h1>
+      <body>
+          <h1><a href="/">WEB</a></h1>
             ${list}
-            <a href = "/create">create</a>
+            ${control}
             ${body}
-        </body>    
+      </body>    
     </html>`;
 }
 
@@ -41,7 +42,9 @@ var app = http.createServer(function(request,response){
                 var title = 'Welcome';
                 var description = 'Hello, Node.js';
                 var list = templateList(filelist);
-                var template = templateHTML(title, list, `<h2>${title}</h2>${description}`);
+                var template = templateHTML(title, list,
+                    `<h2>${title}</h2>${description}`,
+                    `<a href = "/create">create</a>`);
                 response.writeHead(200);
                 response.end(template);
             })
@@ -50,7 +53,9 @@ var app = http.createServer(function(request,response){
                 fs.readFile(`data/${queryData.id}`,'utf8',function(err, description){
                     var title = queryData.id;
                     var list = templateList(filelist);
-                    var template = templateHTML(title, list, `<h2>${title}</h2>${description}`);
+                    var template = templateHTML(title, list,
+                        `<h2>${title}</h2>${description}`,
+                        `<a href = "/create">create</a> <a href = "/update?id=${title}">update</a>`);
                     response.writeHead(200);    //웹브라우저가 웹서버에 접근할때, 웹 서버가 브라우저에게 200을 전송하면 파일을 성공적으로 전송했다.
                     response.end(template); //(querydata.id)를 페이지에 출력하는 역할
                 });
@@ -61,7 +66,7 @@ var app = http.createServer(function(request,response){
             var title = 'WEB - create';
             var list = templateList(filelist);
             var template = templateHTML(title, list, `
-              <form action="http://localhost:3000/create_process" method="post">
+              <form action="/create_process" method="post">
                 <p><input type="text" name="title" placeholder="title"></p>
                 <p>
                   <textarea name="description" placeholder="description"></textarea>
@@ -69,8 +74,8 @@ var app = http.createServer(function(request,response){
                 <p>
                   <input type="submit">
                 </p>
-              </form>
-            `);
+              </form>`,
+              ``);
             response.writeHead(200);
             response.end(template);
           });
@@ -88,6 +93,27 @@ var app = http.createServer(function(request,response){
                 response.end('success');
             })
         });
+    } else if(pathname === '/update'){
+        fs.readdir('./data', function(error, filelist){
+            fs.readFile(`data/${queryData.id}`,'utf8',function(err, description){
+                var title = queryData.id;
+                var list = templateList(filelist);
+                var template = templateHTML(title, list,
+                    `<form action="/update_process" method="post">
+                      <input type = "hidden" name = "id" value="%{title}">
+                      <p><input type="text" name="title" placeholder="title" value = "${title}"></p>
+                      <p>
+                        <textarea name="description" placeholder="description">${description}</textarea>
+                      </p>
+                      <p>
+                        <input type="submit">
+                      </p>
+                    </form>`,
+                    `<a href = "/create">create</a> <a href = "/update?id=${title}">update</a>`);
+                response.writeHead(200);    //웹브라우저가 웹서버에 접근할때, 웹 서버가 브라우저에게 200을 전송하면 파일을 성공적으로 전송했다.
+                response.end(template); //(querydata.id)를 페이지에 출력하는 역할
+            });
+        })
     } else {
         response.writeHead(404);    //파일을 찾을수 없는 경우 서버는 404를 전송함
         response.end('Not found');
