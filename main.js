@@ -4,6 +4,7 @@ var url = require('url'); //url이라는 모듈을 사용할 것을 node.js에�
 var qs = require('querystring');
 var path = require('path');
 var template = require('./lib/template.js');
+var sanitizeHtml = require('sanitize-html');  // <script>와 같은 예민한 tag들을 필터링해줌
 
 var app = http.createServer(function(request,response){
     var _url = request.url;
@@ -25,16 +26,19 @@ var app = http.createServer(function(request,response){
       } else {
         fs.readdir('./data', function(error, filelist){
           var filteredId = path.parse(queryData.id).base; // ../를 차단하여 시용자가 querystring을 조작하여 DB내부에 접속하여 데이터를 보는 것을 방지
-          var filteredId = path.parse(queryData.id).base;
           fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
             var title = queryData.id;
+            var sanitizedTitle = sanitizeHtml(title);
+            var sanitizeDescription = sanitizeHtml(description, {
+              allowedTags:['h1']
+            });
             var list = template.list(filelist);
             var html = template.HTML(title, list,
-              `<h2>${title}</h2>${description}`,
+              `<h2>${sanitizedTitle}</h2>${sanitizeDescription}`,
               `<a href="/create">create</a>
-               <a href="/update?id=${title}">update</a>
+               <a href="/update?id=${sanitizedTitle}">update</a>
                <form action="/delete_process" method="post">
-                 <input type="hidden" name="id" value="${title}">
+                 <input type="hidden" name="id" value="${sanitizedTitle}">
                  <input type="submit" value="delete"> 
                </form>`  //querystring을 이용한 get방식을 통해 delete를 구현하면, cashing을 이용한 플러그인으로 인하여 의도하지 않게 삭제가 될 수도 있음.
             );
@@ -111,8 +115,7 @@ var app = http.createServer(function(request,response){
           var title = post.title;
           var description = post.description;
           fs.rename(`data/${id}`, `data/${title}`, function(error){
-
-            fs.writeFile(`data/${filteredId}`, description, 'utf8', function(err){
+            fs.writeFile(`data/${title}`, description, 'utf8', function(err){
               response.writeHead(302, {Location: `/?id=${title}`});
               response.end();
             })
